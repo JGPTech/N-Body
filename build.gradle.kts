@@ -64,7 +64,7 @@ dependencies {
 
 application {
     // Укажите основной класс
-    mainClass.set("SimulationApp")
+    mainClass.set("kz.qwertukg.nBody.AppKt")
 }
 
 tasks.withType<JavaExec> {
