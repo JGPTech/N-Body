@@ -96,5 +96,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     if (System.getenv("RAILWAY_ENVIRONMENT") != null) {
         exclude("**/nBodyParticleMesh/**")
         exclude("**/App.kt")
+        exclude("**/common.kt")  // Add this line
     }
 }
