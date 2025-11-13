@@ -58,7 +58,7 @@ class NBodySimulationServer {
         val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
         println("Starting N-Body server on port $port")
         
-        embeddedServer(Netty, port = 8080) {
+        embeddedServer(Netty, port = port) {
             install(WebSockets) {
                 pingPeriod = Duration.ofSeconds(15)
                 timeout = Duration.ofSeconds(60)
@@ -67,8 +67,11 @@ class NBodySimulationServer {
             }
             
             routing {
-                // Serve static files from resources/static directory
-                staticFiles("/", File("src/main/resources/static"))
+                // Serve static files - ADD THIS
+                static("/") {
+                    resources("static")
+                    defaultResource("static/index.html")
+                }
                 
                 webSocket("/simulation") {
                     sessions.add(this)
@@ -659,3 +662,4 @@ fun main() {
     server.start()
 
 }
+
