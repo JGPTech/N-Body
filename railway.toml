@@ -1,6 +1,9 @@
 [build]
 builder = "NIXPACKS"
 
+[build.env]
+NIXPACKS_JDK_VERSION = "18"
+
 [deploy]
 startCommand = "./gradlew runServer"
 restartPolicyType = "ON_FAILURE"
