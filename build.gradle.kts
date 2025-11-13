@@ -34,6 +34,10 @@ dependencies {
     runtimeOnly("org.lwjgl:lwjgl-glfw::natives-macos")
     runtimeOnly("org.lwjgl:lwjgl-opengl::natives-macos")
     
+    // ADD THESE for the old App.kt to work:
+    implementation("org.joml:joml:1.10.5")
+    implementation("com.github.wendykierp:JTransforms:3.1")
+    
     // Dependencies for web server
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
