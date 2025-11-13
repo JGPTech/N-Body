@@ -813,7 +813,7 @@ function connectWebSocket() {
     console.log('Connecting to WebSocket:', wsUrl);
 
     try {
-        ws = new WebSocket('ws://localhost:8080/simulation');
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             console.log('WebSocket connected successfully');
@@ -1278,3 +1278,4 @@ if (document.readyState === 'loading') {
     init();
 
 }
+
