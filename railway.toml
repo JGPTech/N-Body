@@ -1,6 +1,5 @@
 [build]
 builder = "NIXPACKS"
-nixpacksVersion = "1.*"
 
 [deploy]
 startCommand = "./gradlew runServer"
