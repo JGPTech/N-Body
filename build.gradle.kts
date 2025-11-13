@@ -94,8 +94,6 @@ tasks.register<JavaExec>("runSwing") {
 // Exclude unused files from compilation when on Railway
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     if (System.getenv("RAILWAY_ENVIRONMENT") != null) {
-        exclude("**/nBodyParticleMesh/**")
-        exclude("**/App.kt")
-        exclude("**/common.kt")  // Add this line
+        exclude("**/kz/qwertukg/nBody/**")  // Exclude entire nBody folder
     }
 }
