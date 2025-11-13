@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Body Gravity Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
+            height: 100vh;
+            overflow: hidden;
+            color: #2c2c2c;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: 60px 1fr 80px;
+            height: 100vh;
+            gap: 1px;
+            background: #d0d0d0;
+        }
+
+        /* Top Stats Bar */
+        .stats-bar {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            gap: 40px;
+            border-bottom: 1px solid #d0d0d0;
+            font-size: 13px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            color: #2c2c2c;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        /* Left Control Panel */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 25px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-right: 1px solid #d0d0d0;
+        }
+
+        /* Right Math Panel */
+        .math-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            overflow-y: auto;
+            border-left: 1px solid #d0d0d0;
+        }
+
+        .math-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #444;
+        }
+
+        .equation-block {
+            background: #f8f8f8;
+            border-left: 3px solid #d0d0d0;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Computer Modern', 'Times New Roman', serif;
+            text-align: center;
+        }
+
+        .equation {
+            font-size: 16px;
+            color: #2c2c2c;
+            margin: 10px 0;
+        }
+
+        .equation-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .parameter-list {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .parameter-item {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .parameter-symbol {
+            display: inline-block;
+            width: 30px;
+            font-weight: 600;
+            color: #2c2c2c;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        /* Knob Controls */
+        .knob-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .knob-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .knob {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffffff, #e0e0e0);
+            box-shadow: 4px 4px 8px #c0c0c0, -4px -4px 8px #ffffff;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .knob:active {
+            transform: scale(0.95);
+        }
+
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 13px;
+            background: #666;
+            border-radius: 1px;
+            transform-origin: 50% calc(100% + 15.5px);
+        }
+
+        .knob-label {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+        }
+
+        .knob-value {
+            font-size: 9px;
+            color: #2c2c2c;
+            font-weight: 500;
+        }
+
+        /* Slider Controls */
+        .slider-control {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 2px;
+            -webkit-appearance: none;
+            background: #d0d0d0;
+            outline: none;
+            border-radius: 1px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #666;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            background: #2c2c2c;
+        }
+
+        /* Render Window */
+        .render-window {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .render-placeholder {
+            text-align: center;
+            color: #666;
+        }
+
+        #connection-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-connected {
+            color: #4ade80;
+        }
+
+        .status-disconnected {
+            color: #ef4444;
+        }
+
+        /* Bottom Model Selector */
+        .model-selector {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 15px;
+            border-top: 1px solid #d0d0d0;
+        }
+
+        .model-option {
+            padding: 12px 30px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .model-option:hover {
+            background: #e0e0e0;
+            color: #2c2c2c;
+        }
+
+        .model-option.active {
+            background: #2c2c2c;
+            color: white;
+        }
+
+        /* Play Controls */
+        .play-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 8px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .control-btn.active {
+            background: #2c2c2c;
+            color: white;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 4px;
+            padding: 2px;
+            margin-bottom: 18px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 7px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            color: #666;
+        }
+
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            color: #2c2c2c;
+        }
+
+        /* Description text */
+        .description {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f0f0f0;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d0d0d0;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c0c0c0;
+        }
+    </style>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Top Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">Bodies</span>
+                <span class="stat-value" id="stat-bodies">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">FPS</span>
+                <span class="stat-value" id="stat-fps">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Sim Time</span>
+                <span class="stat-value" id="stat-time">0.0s</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Interactions</span>
+                <span class="stat-value" id="stat-interactions">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Mode</span>
+                <span class="stat-value" id="stat-mode">CPU</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Steps/s</span>
+                <span class="stat-value" id="stat-sim-rate">0</span>
+            </div>
+        </div>
+
+        <!-- Left Control Panel -->
+        <div class="control-panel">
+            <div class="control-section">
+                <div class="section-title">Compute Mode</div>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="mode-cpu" data-mode="cpu">CPU</button>
+                    <button class="mode-btn" id="mode-gpu" data-mode="gpu">GPU</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Simulation</div>
+                <div class="play-controls">
+                    <button class="control-btn" id="btn-play">Play</button>
+                    <button class="control-btn" id="btn-pause">Pause</button>
+                    <button class="control-btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Physics Parameters</div>
+                <div class="knob-group">
+                    <div class="knob-control">
+                        <div class="knob" id="knob-g" data-param="g" data-min="0" data-max="200" data-value="80"></div>
+                        <div class="knob-label">Gravity</div>
+                        <div class="knob-value" id="value-g">80.0</div>
+                    </div>
+                    <div class="knob-control">
+                        <div class="knob" id="knob-dt" data-param="dt" data-min="0.001" data-max="0.05"
+                            data-value="0.005"></div>
+                        <div class="knob-label">Time Step</div>
+                        <div class="knob-value" id="value-dt">0.005</div>
+                    </div>
+                    <div class="knob-control">
+                        <div class="knob" id="knob-theta" data-param="theta" data-min="0.2" data-max="1.6"
+                            data-value="0.5"></div>
+                        <div class="knob-label">Theta</div>
+                        <div class="knob-value" id="value-theta">0.50</div>
+                    </div>
+                    <div class="knob-control">
+                        <div class="knob" id="knob-soft" data-param="softening" data-min="0.1" data-max="5"
+                            data-value="1"></div>
+                        <div class="knob-label">Softening</div>
+                        <div class="knob-value" id="value-soft">1.0</div>
+                    </div>
+                </div>
+
+                <div class="slider-control">
+                    <div class="slider-label">
+                        <span>Body Count</span>
+                        <span id="body-count-display">10,000</span>
+                    </div>
+                    <input type="range" class="slider" id="body-count-slider" min="1000" max="50000" step="1000"
+                        value="10000">
+                </div>
+
+                <div class="slider-control">
+                    <div class="slider-label">
+                        <span>Speed</span>
+                        <span id="speed-display">1.0x</span>
+                    </div>
+                    <input type="range" class="slider" id="speed-slider" min="0.1" max="5" value="1" step="0.1">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Camera</div>
+                <div class="play-controls">
+                    <button class="control-btn" id="cam-reset">Reset</button>
+                    <button class="control-btn" id="cam-follow">Follow</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Render Window -->
+        <div class="render-window">
+            <div id="canvas-container"></div>
+            <div id="connection-status" class="status-disconnected">
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- Right Math Panel -->
+        <div class="math-panel">
+            <div class="control-section" id="math-content">
+                <div class="section-title">Galaxy Collision</div>
+
+                <div class="description">
+                    Two spiral galaxies approaching on a collision course. Each galaxy contains a central supermassive
+                    black hole surrounded by thousands of stars in stable orbits. Watch as gravitational interactions
+                    reshape both systems.
+                </div>
+
+                <div class="equation-block">
+                    <div class="equation-label">Gravitational Force</div>
+                    <div class="equation">
+                        \[\vec{F}_{ij} = -G \frac{m_i m_j}{r_{ij}^2 + \epsilon^2} \hat{r}_{ij}\]
+                    </div>
+                </div>
+
+                <div class="equation-block">
+                    <div class="equation-label">N-Body Acceleration</div>
+                    <div class="equation">
+                        \[\vec{a}_i = -G \sum_{j \neq i} \frac{m_j}{r_{ij}^2 + \epsilon^2} \hat{r}_{ij}\]
+                    </div>
+                </div>
+
+                <div class="parameter-list">
+                    <div class="parameter-item">
+                        <span class="parameter-symbol">G</span> = Gravitational constant (80)
+                    </div>
+                    <div class="parameter-item">
+                        <span class="parameter-symbol">ε</span> = Softening parameter (1.0)
+                    </div>
+                    <div class="parameter-item">
+                        <span class="parameter-symbol">Δt</span> = Integration timestep (0.005s)
+                    </div>
+                    <div class="parameter-item">
+                        <span class="parameter-symbol">θ</span> = Barnes-Hut opening angle (0.5)
+                    </div>
+                </div>
+
+                <div class="equation-block">
+                    <div class="equation-label">Computational Complexity</div>
+                    <div class="equation">
+                        \[\text{GPU: } \mathcal{O}(N^2)\]
+                        \[\text{CPU: } \mathcal{O}(N \log N)\]
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Model Selector -->
+        <div class="model-selector">
+            <button class="model-option active" data-scenario="galaxy_collision">Galaxy Collision</button>
+            <button class="model-option" data-scenario="sphere">Sphere</button>
+            <button class="model-option" data-scenario="disk">Disk</button>
+            <button class="model-option" data-scenario="custom">Custom</button>
+        </div>
+    </div>
+
+    <!-- Three.js and main script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+</body>
+
+</html>
