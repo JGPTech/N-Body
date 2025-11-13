@@ -2,9 +2,12 @@
 builder = "NIXPACKS"
 
 [build.env]
-NIXPACKS_JDK_VERSION = "18"
+NIXPACKS_JDK_VERSION = "17"
+
+[phases.build]
+cmds = ["./gradlew shadowJar"]
 
 [deploy]
-startCommand = "./gradlew runServer"
+startCommand = "java -Xmx384m -jar build/libs/*-all.jar"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
