@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+
+[build.nixpacksVersion]
+version = "1.*"
+
+[deploy]
+startCommand = "./gradlew runServer"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
