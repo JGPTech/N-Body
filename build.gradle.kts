@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.9.20" // Compatible version
-    kotlin("plugin.serialization") version "1.9.20" // Added for JSON serialization
+    kotlin("jvm") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -16,7 +16,7 @@ val lwjglVersion = "3.3.3"
 val ktorVersion = "2.3.5"
 
 dependencies {
-    // Original dependencies - using compatible version
+    // Original dependencies
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     
     // LWJGL for GPU
@@ -34,7 +34,7 @@ dependencies {
     runtimeOnly("org.lwjgl:lwjgl-glfw::natives-macos")
     runtimeOnly("org.lwjgl:lwjgl-opengl::natives-macos")
     
-    // NEW: Dependencies for web server
+    // Dependencies for web server
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -44,7 +44,7 @@ dependencies {
     implementation("io.ktor:ktor-server-html-builder:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common:$ktorVersion")
     
-    // Logging (for the server)
+    // Logging
     implementation("ch.qos.logback:logback-classic:1.4.11")
     
     testImplementation(kotlin("test"))
@@ -55,7 +55,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("server.NBodySimulationServerKt")
 }
 
 tasks.test {
@@ -65,7 +65,7 @@ tasks.test {
 tasks.shadowJar {
     archiveClassifier.set("all")
     manifest {
-        attributes["Main-Class"] = application.mainClass.get()
+        attributes["Main-Class"] = "server.NBodySimulationServerKt"
     }
 }
 
@@ -90,29 +90,8 @@ tasks.register<JavaExec>("runSwing") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("MainKt")
 }
-// Additional tasks for running different components
-tasks.register<JavaExec>("runServer") {
-    group = "application"
-    description = "Run the WebSocket simulation server"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("server.NBodySimulationServerKt")
-}
 
-tasks.register<JavaExec>("runGPU") {
-    group = "application"
-    description = "Run the GPU N-body renderer"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("gpu.GpuNBodySSBORender")
-}
-
-tasks.register<JavaExec>("runSwing") {
-    group = "application"
-    description = "Run the Swing-based Barnes-Hut visualization"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("MainKt")
-}
-
-// Exclude unused files from compilation when RAILWAY environment variable is set
+// Exclude unused files from compilation when on Railway
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     if (System.getenv("RAILWAY_ENVIRONMENT") != null) {
         exclude("**/nBodyParticleMesh/**")
