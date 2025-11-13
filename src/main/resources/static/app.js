@@ -798,13 +798,19 @@ function updateTrails() {
 function connectWebSocket() {
     const statusEl = document.getElementById('connection-status');
     const statusText = document.getElementById('status-text');
-
+    
     if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
         reconnectTimeout = null;
     }
-
-    console.log('Attempting WebSocket connection... (attempt', reconnectAttempts + 1, ')');
+    
+    // Use production URL if on Railway, localhost otherwise
+    const isProduction = window.location.hostname !== 'localhost';
+    const protocol = isProduction ? 'wss:' : 'ws:';
+    const host = isProduction ? window.location.host : 'localhost:8080';
+    const wsUrl = `${protocol}//${host}/simulation`;
+    
+    console.log('Connecting to WebSocket:', wsUrl);
 
     try {
         ws = new WebSocket('ws://localhost:8080/simulation');
@@ -1270,4 +1276,5 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
+
 }
