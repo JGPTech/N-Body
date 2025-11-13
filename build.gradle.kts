@@ -90,3 +90,32 @@ tasks.register<JavaExec>("runSwing") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("MainKt")
 }
+// Additional tasks for running different components
+tasks.register<JavaExec>("runServer") {
+    group = "application"
+    description = "Run the WebSocket simulation server"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("server.NBodySimulationServerKt")
+}
+
+tasks.register<JavaExec>("runGPU") {
+    group = "application"
+    description = "Run the GPU N-body renderer"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("gpu.GpuNBodySSBORender")
+}
+
+tasks.register<JavaExec>("runSwing") {
+    group = "application"
+    description = "Run the Swing-based Barnes-Hut visualization"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("MainKt")
+}
+
+// Exclude unused files from compilation when RAILWAY environment variable is set
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    if (System.getenv("RAILWAY_ENVIRONMENT") != null) {
+        exclude("**/nBodyParticleMesh/**")
+        exclude("**/App.kt")
+    }
+}
