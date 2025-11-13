@@ -53,8 +53,10 @@ class NBodySimulationServer {
     }
     
     fun start() {
-        // Initialize with default scenario
         initializeDefaultScenario()
+        
+        val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
+        println("Starting N-Body server on port $port")
         
         embeddedServer(Netty, port = 8080) {
             install(WebSockets) {
@@ -655,4 +657,5 @@ fun main() {
     })
     
     server.start()
+
 }
