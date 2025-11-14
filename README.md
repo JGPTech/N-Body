@@ -1,5 +1,8 @@
- # N‑Body Gravity Simulator
 
+<img width="2048" height="794" alt="image" src="https://github.com/user-attachments/assets/88cd2095-1249-497e-ad7a-712d40dc6468" />
+
+ 
+ # N‑Body Gravity Simulator
  High-polish, production-ready visualization of galactic dynamics featuring three simulation engines, a live-updating Three.js cockpit, and Kotlin backends for both CPU and GPU execution. Built on [Daniil Rakhmatulin’s](https://github.com/qwertukg) Barnes–Hut work, the project now bundles a full-stack experience that you can run locally or deploy via Railway.
 
  ---
