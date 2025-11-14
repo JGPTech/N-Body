@@ -88,6 +88,13 @@ tasks.register<JavaExec>("runGPU") {
     mainClass.set("gpu.GpuNBodySSBORender")
 }
 
+tasks.register<JavaExec>("runParticleMesh") {
+    group = "application"
+    description = "Run the particle-mesh LWJGL client"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("kz.qwertukg.nBody.AppKt")
+}
+
 tasks.register<JavaExec>("runSwing") {
     group = "application"
     description = "Run the Swing-based Barnes-Hut visualization"

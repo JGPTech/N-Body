@@ -2,47 +2,109 @@
 
 // Scenario descriptions and equations
 const scenarioData = {
-    galaxy_collision: {
-        title: "Galaxy Collision",
-        description: "Two spiral galaxies approaching on a collision course. Each galaxy contains a central supermassive black hole surrounded by thousands of stars in stable orbits. Watch as gravitational interactions reshape both systems.",
+    bh_collision: {
+        title: "Barnes-Hut Collision",
+        description: "Two spiral galaxies approach on intersecting trajectories. Each system carries a compact core plus extended stellar disk, and the Barnes-Hut tree keeps long-range forces efficient while preserving orbital structure.",
         parameters: [
             { symbol: "G", desc: "Gravitational constant (80)" },
-            { symbol: "ε", desc: "Softening parameter (1.0)" },
-            { symbol: "Δt", desc: "Integration timestep (0.005s)" },
-            { symbol: "θ", desc: "Barnes-Hut opening angle (0.5)" }
-        ]
+            { symbol: "\\epsilon", desc: "Softening parameter (1.0)" },
+            { symbol: "\\Delta t", desc: "Integration timestep (0.005 s)" },
+            { symbol: "\\theta", desc: "Opening angle controls tree accuracy (0.5)" }
+        ],
+        complexity: ["\\[\\text{Barnes-Hut: } \\mathcal{O}(N \\log N)\\]"]
     },
-    sphere: {
-        title: "Spherical Distribution",
-        description: "Uniform spherical distribution of bodies orbiting a central massive object. Particles follow stable Keplerian orbits, demonstrating the balance between gravitational attraction and orbital velocity.",
+    bh_disk: {
+        title: "Barnes-Hut Disk",
+        description: "A cool, rotationally supported disk with bar and spiral tendencies. Demonstrates how a hierarchical solver balances large-scale torques with local shearing motion.",
         parameters: [
-            { symbol: "v_circ", desc: "Circular velocity = √(GM/r)" },
-            { symbol: "M_enc", desc: "Enclosed mass within radius r" },
-            { symbol: "r", desc: "Distance from center" },
-            { symbol: "N", desc: "Number of bodies" }
-        ]
-    },
-    disk: {
-        title: "Rotating Disk",
-        description: "Thin disk of bodies with rotation profile matching observed galaxies. Demonstrates differential rotation and the formation of spiral density waves through self-gravity.",
-        parameters: [
-            { symbol: "Ω(r)", desc: "Angular velocity at radius r" },
-            { symbol: "κ", desc: "Epicyclic frequency" },
+            { symbol: "\\Omega(r)", desc: "Angular velocity profile" },
             { symbol: "Q", desc: "Toomre stability parameter" },
-            { symbol: "σ", desc: "Velocity dispersion" }
+            { symbol: "\\kappa", desc: "Epicyclic frequency" },
+            { symbol: "\\sigma_r", desc: "Radial velocity dispersion" }
+        ],
+        complexity: ["\\[\\text{Barnes-Hut: } \\mathcal{O}(N \\log N)\\]"]
+    },
+    direct_sphere: {
+        title: "Direct N-Body Sphere",
+        description: "A nearly isotropic halo orbiting a dominant central mass. Every pairwise force is evaluated, highlighting energy conservation and small-scale encounters.",
+        parameters: [
+            { symbol: "v_{\\text{circ}}", desc: "Circular velocity = \\sqrt{GM/r}" },
+            { symbol: "M_{\\text{enc}}", desc: "Enclosed mass within radius r" },
+            { symbol: "r", desc: "Distance from the center" },
+            { symbol: "N", desc: "Number of bodies" }
+        ],
+        complexity: ["\\[\\text{Direct Sum: } \\mathcal{O}(N^2)\\]"]
+    },
+    direct_shell: {
+        title: "Direct Shells",
+        description: "Concentric, phase-shifted shells of stars that drift through each other and create interference patterns. Ideal for showcasing direct-sum force accuracy on overlapping structures.",
+        parameters: [
+            { symbol: "\\Delta r", desc: "Radial spacing between shells" },
+            { symbol: "m_i", desc: "Mass per shell layer" },
+            { symbol: "v_{\\text{phase}}", desc: "Initial tangential phasing velocity" },
+            { symbol: "N_{\\text{shell}}", desc: "Number of occupied shells" }
+        ],
+        complexity: ["\\[\\text{Direct Sum: } \\mathcal{O}(N^2)\\]"]
+    },
+    pm_grand_design: {
+        title: "Particle Mesh Grand Design",
+        description: "A grand-design spiral with a short bar and two dominant arms. The mesh keeps density waves coherent while damping noise, producing sweeping arm features.",
+        parameters: [
+            { symbol: "m", desc: "Spiral arm multiplicity" },
+            { symbol: "R_d", desc: "Disk scale length" },
+            { symbol: "A_b", desc: "Bar strength coefficient" },
+            { symbol: "\\Phi_m", desc: "Pattern speed phase" }
+        ],
+        complexity: ["\\[\\text{Particle Mesh: } \\mathcal{O}(N \\log N)\\]"]
+    },
+    pm_warped_disk: {
+        title: "Particle Mesh Warped Disk",
+        description: "A flared disk with outer rings tilted relative to the core. Mesh forces keep the warp smooth, making vertical oscillations and twisting nodes easy to visualize.",
+        parameters: [
+            { symbol: "i(r)", desc: "Inclination warp profile" },
+            { symbol: "z_0", desc: "Scale height at the center" },
+            { symbol: "R_w", desc: "Warp onset radius" },
+            { symbol: "m_{\\text{ring}}", desc: "Mass per warped ring" }
+        ],
+        complexity: ["\\[\\text{Particle Mesh: } \\mathcal{O}(N \\log N)\\]"]
+    }
+};
+
+const engineConfigs = {
+    bh: {
+        label: "Barnes-Hut",
+        serverMode: "cpu",
+        scenarios: [
+            { id: "bh_collision", label: "Collision", serverScenario: "galaxy_collision" },
+            { id: "bh_disk", label: "Disk", serverScenario: "disk" }
         ]
     },
-    custom: {
-        title: "Custom Configuration",
-        description: "Multiple clusters arranged in a ring pattern with individual rotation. Demonstrates complex multi-body gravitational interactions and orbital resonances.",
-        parameters: [
-            { symbol: "N_c", desc: "Number of clusters" },
-            { symbol: "M_c", desc: "Mass per cluster" },
-            { symbol: "R", desc: "Cluster separation" },
-            { symbol: "v_orb", desc: "Orbital velocity" }
+    direct: {
+        label: "Direct",
+        serverMode: "gpu",
+        scenarios: [
+            { id: "direct_sphere", label: "Sphere", serverScenario: "sphere" },
+            { id: "direct_shell", label: "Shell", serverScenario: "custom" }
+        ]
+    },
+    particle: {
+        label: "Particle Mesh",
+        serverMode: "cpu",
+        scenarios: [
+            { id: "pm_grand_design", label: "Grand Design", serverScenario: "disk" },
+            { id: "pm_warped_disk", label: "Warped Disk", serverScenario: "custom" }
         ]
     }
 };
+
+const engineSelections = {
+    bh: engineConfigs.bh.scenarios[0].id,
+    direct: engineConfigs.direct.scenarios[0].id,
+    particle: engineConfigs.particle.scenarios[0].id
+};
+
+let currentEngine = "bh";
+let currentScenarioId = engineSelections[currentEngine];
 
 // WebSocket connection and simulation state
 let ws = null;
@@ -113,6 +175,125 @@ let stats = {
     lastTime: performance.now(),
     stepsPerSecond: 0
 };
+
+const LUMINOSITY_BOOST = 2.0;
+
+function boostColor(array, index, factor = LUMINOSITY_BOOST) {
+    array[index] = Math.min(1.0, array[index] * factor);
+    array[index + 1] = Math.min(1.0, array[index + 1] * factor);
+    array[index + 2] = Math.min(1.0, array[index + 2] * factor);
+}
+
+function getEngineConfig(engineId) {
+    return engineConfigs[engineId] || engineConfigs.bh;
+}
+
+function getScenarioConfig(engineId, scenarioId) {
+    const engine = getEngineConfig(engineId);
+    if (!engine || !engine.scenarios || engine.scenarios.length === 0) return null;
+    return engine.scenarios.find(s => s.id === scenarioId) || engine.scenarios[0];
+}
+
+function getActiveScenarioConfig() {
+    return getScenarioConfig(currentEngine, currentScenarioId);
+}
+
+function renderScenarioOptions(engineId) {
+    const container = document.getElementById('scenario-selector');
+    if (!container) return;
+
+    const engine = getEngineConfig(engineId);
+    if (!engine || !engine.scenarios) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const selectedId = engineSelections[engineId] || engine.scenarios[0]?.id;
+    if (!selectedId && engine.scenarios.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    engineSelections[engineId] = selectedId;
+    container.innerHTML = '';
+    engine.scenarios.forEach((scenario) => {
+        const button = document.createElement('button');
+        button.className = 'model-option';
+        button.dataset.scenario = scenario.id;
+        button.textContent = scenario.label;
+        if (scenario.id === selectedId) {
+            button.classList.add('active');
+        }
+        container.appendChild(button);
+    });
+}
+
+function sendInitForSelection(serverMode, serverScenario) {
+    const slider = document.getElementById('body-count-slider');
+    const bodyCount = slider ? parseInt(slider.value, 10) || 10000 : 10000;
+    sendMessage({
+        type: 'init',
+        mode: serverMode,
+        bodyCount: bodyCount,
+        scenario: serverScenario
+    });
+}
+
+function selectScenario(scenarioId, options = {}) {
+    const engine = getEngineConfig(currentEngine);
+    if (!engine) return;
+
+    const scenario = getScenarioConfig(currentEngine, scenarioId);
+    if (!scenario) return;
+
+    const previousId = currentScenarioId;
+    currentScenarioId = scenario.id;
+    engineSelections[currentEngine] = scenario.id;
+
+    const container = document.getElementById('scenario-selector');
+    if (container) {
+        const buttons = container.querySelectorAll('.model-option');
+        buttons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.scenario === scenario.id);
+        });
+    }
+
+    updateMathPanel(scenario.id);
+
+    if (previousId !== scenario.id && options.skipTrailReset !== true) {
+        trails = [];
+        previousPositions.clear();
+    }
+
+    const shouldSend = options.sendInit !== false && ((previousId !== scenario.id) || options.forceSend);
+    if (shouldSend) {
+        const serverScenario = scenario.serverScenario || scenario.id;
+        sendInitForSelection(engine.serverMode, serverScenario);
+    }
+}
+
+function setEngine(engineId, options = {}) {
+    if (!engineConfigs[engineId]) {
+        console.warn('Unknown engine selected:', engineId);
+        return;
+    }
+
+    const changed = currentEngine !== engineId;
+    currentEngine = engineId;
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.engine === engineId);
+    });
+
+    renderScenarioOptions(engineId);
+    const scenarioId = engineSelections[engineId] || engineConfigs[engineId].scenarios[0]?.id;
+    if (scenarioId) {
+        selectScenario(scenarioId, {
+            sendInit: options.sendInit !== false,
+            forceSend: options.forceSend || changed
+        });
+    }
+}
 
 // Knob interaction class - COMPLETE WITH RESET
 class Knob {
@@ -451,6 +632,7 @@ function initParticles(maxBodies) {
     });
 
     particles = new THREE.Points(particleGeometry, particleMaterial);
+    particles.frustumCulled = false;
     scene.add(particles);
 
     console.log('Initialized enhanced particle system for', maxBodies, 'bodies');
@@ -503,6 +685,7 @@ function initTrails() {
     });
 
     trailMesh = new THREE.Points(trailGeometry, trailMaterial);
+    trailMesh.frustumCulled = false;
     scene.add(trailMesh);
 
     console.log('Trail system initialized');
@@ -549,6 +732,7 @@ function initHalos() {
     });
 
     haloMesh = new THREE.Points(haloGeometry, haloMaterial);
+    haloMesh.frustumCulled = false;
     scene.add(haloMesh);
 
     console.log('Halo system initialized');
@@ -629,12 +813,14 @@ function updateParticles(buffer) {
                 bodyColors[i] *= intensity;
                 bodyColors[i + 1] *= intensity;
                 bodyColors[i + 2] *= intensity;
+                boostColor(bodyColors, i);
             } else {
                 // Z-based depth coloring
                 const zNorm = (z - 300) / 400;
                 bodyColors[i] = 0.3 + zNorm * 0.4;
                 bodyColors[i + 1] = 0.5 + (1 - Math.abs(zNorm - 0.5)) * 0.3;
                 bodyColors[i + 2] = 0.8 + (1 - zNorm) * 0.2;
+                boostColor(bodyColors, i);
             }
 
             // Mass-based sizing (assuming larger mass = ~1000+)
@@ -648,9 +834,11 @@ function updateParticles(buffer) {
                     haloPositions[massiveBodyCount * 3 + 1] = bodyPositions[i + 1];
                     haloPositions[massiveBodyCount * 3 + 2] = bodyPositions[i + 2];
 
-                    haloColors[massiveBodyCount * 3] = 1.0;
-                    haloColors[massiveBodyCount * 3 + 1] = 0.6;
-                    haloColors[massiveBodyCount * 3 + 2] = 0.2;
+                    const haloColorIndex = massiveBodyCount * 3;
+                    haloColors[haloColorIndex] = 1.0;
+                    haloColors[haloColorIndex + 1] = 0.6;
+                    haloColors[haloColorIndex + 2] = 0.2;
+                    boostColor(haloColors, haloColorIndex);
 
                     haloSizes[massiveBodyCount] = 50.0 + estimatedMass * 2.0;
                     massiveBodyCount++;
@@ -668,6 +856,7 @@ function updateParticles(buffer) {
             haloGeometry.attributes.position.needsUpdate = true;
             haloGeometry.attributes.color.needsUpdate = true;
             haloGeometry.attributes.size.needsUpdate = true;
+            haloGeometry.computeBoundingSphere();
             haloMesh.visible = true;
         } else {
             haloMesh.visible = false;
@@ -695,6 +884,7 @@ function updateParticles(buffer) {
             bodyColors[i] = 0.4 + t * 0.4;
             bodyColors[i + 1] = 0.6 + (1 - t) * 0.3;
             bodyColors[i + 2] = 1.0 - t * 0.3;
+            boostColor(bodyColors, i);
 
             offset += 12;
         }
@@ -727,6 +917,7 @@ function updateParticles(buffer) {
 
     particleGeometry.attributes.position.needsUpdate = true;
     particleGeometry.setDrawRange(0, count);
+    particleGeometry.computeBoundingSphere();
 
     if (particleMaterial.uniforms) {
         particleMaterial.uniforms.baseSize.value = simulationState.is3D ? 4.0 : 3.0;
@@ -792,6 +983,7 @@ function updateTrails() {
     trailGeometry.attributes.color.needsUpdate = true;
     trailGeometry.attributes.alpha.needsUpdate = true;
     trailMesh.visible = true;
+    trailGeometry.computeBoundingSphere();
 }
 
 // WebSocket connection with better error handling
@@ -805,9 +997,18 @@ function connectWebSocket() {
     }
     
     // Use production URL if on Railway, localhost otherwise
-    const isProduction = window.location.hostname !== 'localhost';
-    const protocol = isProduction ? 'wss:' : 'ws:';
-    const host = isProduction ? window.location.host : 'localhost:8080';
+    let protocol;
+    if (window.location.protocol === 'https:') {
+        protocol = 'wss:';
+    } else {
+        protocol = 'ws:';
+    }
+
+    let host = window.location.host;
+    if (!host || host === '') {
+        host = 'localhost:8080';
+    }
+
     const wsUrl = `${protocol}//${host}/simulation`;
     
     console.log('Connecting to WebSocket:', wsUrl);
@@ -910,11 +1111,29 @@ function handleStateUpdate(state) {
         previousPositions.clear();
     }
 
-    const modeText = state.mode === 'cpu' ? 'CPU (2D)' : 'GPU (3D)';
-    updateStatDisplay('stat-mode', modeText);
+    let engineConfig = getEngineConfig(currentEngine);
+    if (engineConfig && engineConfig.serverMode !== state.mode) {
+        const fallbackEntry = Object.entries(engineConfigs).find(([, cfg]) => cfg.serverMode === state.mode);
+        if (fallbackEntry) {
+            const [fallbackEngine] = fallbackEntry;
+            if (fallbackEngine !== currentEngine) {
+                currentEngine = fallbackEngine;
+                renderScenarioOptions(currentEngine);
+                const fallbackScenario = engineSelections[currentEngine] || engineConfigs[currentEngine].scenarios[0]?.id;
+                if (fallbackScenario) {
+                    selectScenario(fallbackScenario, { sendInit: false, skipTrailReset: true });
+                }
+            }
+            engineConfig = getEngineConfig(currentEngine);
+        }
+    }
+
+    const dimensionLabel = state.is3D ? '3D' : '2D';
+    const modeLabel = engineConfig ? engineConfig.label : (state.mode === 'gpu' ? 'Direct' : 'Barnes-Hut');
+    updateStatDisplay('stat-mode', `${modeLabel} (${dimensionLabel})`);
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === state.mode);
+        btn.classList.toggle('active', btn.dataset.engine === currentEngine);
     });
 
     updateStatDisplay('stat-time', (state.simTime || 0).toFixed(1) + 's');
@@ -948,23 +1167,23 @@ function setupEventHandlers() {
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const mode = btn.dataset.mode;
-            console.log('Mode button clicked:', mode);
-
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            const bodyCount = parseInt(document.getElementById('body-count-slider').value);
-            const scenario = document.querySelector('.model-option.active')?.dataset.scenario || 'galaxy_collision';
-
-            sendMessage({
-                type: 'init',
-                mode: mode,
-                bodyCount: bodyCount,
-                scenario: scenario
-            });
+            const engine = btn.dataset.engine;
+            console.log('Engine button clicked:', engine);
+            setEngine(engine, { sendInit: true, forceSend: true });
         });
     });
+
+    const scenarioSelector = document.getElementById('scenario-selector');
+    if (scenarioSelector) {
+        scenarioSelector.addEventListener('click', (event) => {
+            const option = event.target.closest('.model-option');
+            if (!option) return;
+
+            const scenarioId = option.dataset.scenario;
+            console.log('Scenario selected:', scenarioId);
+            selectScenario(scenarioId);
+        });
+    }
 
     document.getElementById('btn-play').addEventListener('click', () => {
         console.log('Play clicked');
@@ -1020,32 +1239,6 @@ function setupEventHandlers() {
             type: 'control',
             command: 'speed',
             speed: value
-        });
-    });
-
-    document.querySelectorAll('.model-option').forEach(option => {
-        option.addEventListener('click', () => {
-            const scenario = option.dataset.scenario;
-            console.log('Scenario selected:', scenario);
-
-            document.querySelectorAll('.model-option').forEach(o => o.classList.remove('active'));
-            option.classList.add('active');
-
-            updateMathPanel(scenario);
-
-            // Clear trails on scenario change
-            trails = [];
-            previousPositions.clear();
-
-            const bodyCount = parseInt(document.getElementById('body-count-slider').value);
-            const mode = document.querySelector('.mode-btn.active')?.dataset.mode || 'cpu';
-
-            sendMessage({
-                type: 'init',
-                mode: mode,
-                bodyCount: bodyCount,
-                scenario: scenario
-            });
         });
     });
 
@@ -1105,12 +1298,25 @@ function updateMathPanel(scenario) {
 
     let paramsHTML = '';
     data.parameters.forEach(param => {
+        const symbolMath = param.symbol ? `\\(${param.symbol}\\)` : '';
         paramsHTML += `
             <div class="parameter-item">
-                <span class="parameter-symbol">${param.symbol}</span> = ${param.desc}
+                <span class="parameter-symbol">${symbolMath}</span> = ${param.desc}
             </div>
         `;
     });
+
+    let complexityHTML = `
+        <div class="equation">
+            \\[\\text{GPU: } \\mathcal{O}(N^2)\\]
+            \\[\\text{CPU: } \\mathcal{O}(N \\log N)\\]
+        </div>
+    `;
+    if (data.complexity && data.complexity.length > 0) {
+        complexityHTML = data.complexity.map(expr => `
+            <div class="equation">${expr}</div>
+        `).join('');
+    }
 
     mathContent.innerHTML = `
         <div class="section-title">${data.title}</div>
@@ -1139,10 +1345,7 @@ function updateMathPanel(scenario) {
         
         <div class="equation-block">
             <div class="equation-label">Computational Complexity</div>
-            <div class="equation">
-                \\[\\text{GPU: } \\mathcal{O}(N^2)\\]
-                \\[\\text{CPU: } \\mathcal{O}(N \\log N)\\]
-            </div>
+            ${complexityHTML}
         </div>
         
         <div class="description" style="margin-top: 20px; font-size: 11px; opacity: 0.7;">
@@ -1152,10 +1355,15 @@ function updateMathPanel(scenario) {
         </div>
     `;
 
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        window.MathJax.typesetPromise([mathContent]).catch((err) => {
-            console.error('MathJax typeset error:', err);
-        });
+    if (window.MathJax) {
+        if (window.MathJax.typesetClear) {
+            window.MathJax.typesetClear([mathContent]);
+        }
+        if (window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([mathContent]).catch((err) => {
+                console.error('MathJax typeset error:', err);
+            });
+        }
     }
 }
 
@@ -1264,8 +1472,10 @@ function init() {
     knobs.theta = new Knob(document.getElementById('knob-theta'));
     knobs.softening = new Knob(document.getElementById('knob-soft'));
 
+    renderScenarioOptions(currentEngine);
+    selectScenario(currentScenarioId, { sendInit: false, skipTrailReset: true });
+
     setupEventHandlers();
-    updateMathPanel('galaxy_collision');
     connectWebSocket();
     animate();
 

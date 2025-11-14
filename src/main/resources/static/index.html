@@ -447,8 +447,9 @@
             <div class="control-section">
                 <div class="section-title">Compute Mode</div>
                 <div class="mode-toggle">
-                    <button class="mode-btn active" id="mode-cpu" data-mode="cpu">CPU</button>
-                    <button class="mode-btn" id="mode-gpu" data-mode="gpu">GPU</button>
+                    <button class="mode-btn active" id="mode-bh" data-engine="bh">Barnes-Hut</button>
+                    <button class="mode-btn" id="mode-direct" data-engine="direct">Direct</button>
+                    <button class="mode-btn" id="mode-pm" data-engine="particle">Particle Mesh</button>
                 </div>
             </div>
 
@@ -575,12 +576,7 @@
         </div>
 
         <!-- Bottom Model Selector -->
-        <div class="model-selector">
-            <button class="model-option active" data-scenario="galaxy_collision">Galaxy Collision</button>
-            <button class="model-option" data-scenario="sphere">Sphere</button>
-            <button class="model-option" data-scenario="disk">Disk</button>
-            <button class="model-option" data-scenario="custom">Custom</button>
-        </div>
+        <div class="model-selector" id="scenario-selector"></div>
     </div>
 
     <!-- Three.js and main script -->

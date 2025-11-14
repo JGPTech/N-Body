@@ -437,21 +437,23 @@ private class GpuNBodyRenderer(
      * @param viewportW Viewport width in pixels.
      * @param viewportH Viewport height in pixels.
      * @param camAngle Camera yaw angle in radians.
+     * @param camPitch Camera pitch angle in radians.
+     * @param zoom Zoom factor for the view.
      * @param center Center of mass to focus the camera on.
      */
-    fun render(viewportW: Int, viewportH: Int, camAngle: Float, center: FloatArray) {
+    fun render(viewportW: Int, viewportH: Int, camAngle: Float, camPitch: Float = 0.2617994f, zoom: Float = 1.0f, center: FloatArray) {
         if (count <= 0) return
         glUseProgram(renderProg)
         glBindVertexArray(vao)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo)
-        glUniform2f(uViewport, viewportW.toFloat(), viewportH.toFloat())
+        glUniform2f(uViewport, viewportW.toFloat() / zoom, viewportH.toFloat() / zoom)
         glUniform1f(uPointBase, Config.POINT_SIZE)
         glUniform1f(uMassScale, Config.MASS_POINT_SCALE)
         glUniform1f(uCamAngle, camAngle)
         glUniform3f(uCenter, center[0], center[1], center[2])
         glEnable(GL_PROGRAM_POINT_SIZE)
-        glUniform1f(uCamPitch, 0.2617994f)
-        glUniform1f(uSpeedScale, 1f / 10_000f)
+        glUniform1f(uCamPitch, camPitch)
+        glUniform1f(uSpeedScale, 1f / 1000f)
         glDrawArrays(GL_POINTS, 0, count)
         glBindVertexArray(0)
         glUseProgram(0)
@@ -532,7 +534,7 @@ private fun generateSphere(n: Int, w: Int, h: Int): List<Body> {
         val x = cx + r * rx
         val y = cy + r * ry
         val zPos = cz + r * rz
-        val speed = 300_000f / max(10f, r)
+        val speed = 300f / max(10f, r)
         val az = 0f
         val ax = if (abs(rz) > 0.99f) 1f else 0f
         val ay = if (abs(rz) > 0.99f) 0f else 1f
@@ -544,7 +546,7 @@ private fun generateSphere(n: Int, w: Int, h: Int): List<Body> {
         val m = 1.0f
         out += Body(x, y, zPos, vx, vy, vz, m)
     }
-    return out + Body(cx, cy, cz, 0f, 0f, 0f, 5_000_000f)
+    return out + Body(cx, cy, cz, 0f, 0f, 0f, 5_000f)
 }
 
 /**
@@ -674,20 +676,39 @@ fun main() {
     glfwSwapInterval(0)
     GL.createCapabilities()
 
-    val N = 50_000
+    val N = 10_000
     val bodies = generateSphere(N, Config.WIDTH, Config.HEIGHT)
 
     var camAngle = 0.0f
+    var camPitch = 0.2617994f  // 15 degrees
     val camSpeed = 0.25f
+    var zoom = 1.0f
 
-    GpuNBodyRenderer(bodies.size, bodies).use { sim ->
+    GpuNBodyRenderer(bodies.size, bodies).use { initialSim ->
+        var sim = initialSim
         var paused = false
+        var needsReset = false
+
+        // Print help message
+        println("GPU N-Body Simulation Controls:")
+        println("  SPACE      - Pause/Resume")
+        println("  R          - Reset simulation")
+        println("  Arrow Keys - Rotate camera")
+        println("  +/-        - Zoom in/out")
+        println("  ESC        - Exit")
 
         glfwSetKeyCallback(window) { _, key, _, action, _ ->
-            if (action == GLFW_PRESS) {
+            if (action == GLFW_PRESS || action == GLFW_REPEAT) {
                 when (key) {
                     GLFW_KEY_ESCAPE -> glfwSetWindowShouldClose(window, true)
                     GLFW_KEY_SPACE  -> paused = !paused
+                    GLFW_KEY_R -> needsReset = true
+                    GLFW_KEY_LEFT -> camAngle -= 0.1f
+                    GLFW_KEY_RIGHT -> camAngle += 0.1f
+                    GLFW_KEY_UP -> camPitch = (camPitch + 0.1f).coerceAtMost(1.5f)
+                    GLFW_KEY_DOWN -> camPitch = (camPitch - 0.1f).coerceAtLeast(-1.5f)
+                    GLFW_KEY_EQUAL, GLFW_KEY_KP_ADD -> zoom *= 1.1f
+                    GLFW_KEY_MINUS, GLFW_KEY_KP_SUBTRACT -> zoom *= 0.9f
                 }
             }
         }
@@ -697,6 +718,17 @@ fun main() {
         var frames = 0
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents()
+
+            // Handle reset
+            if (needsReset) {
+                val newBodies = generateSphere(N, Config.WIDTH, Config.HEIGHT)
+                sim.close()
+                sim = GpuNBodyRenderer(newBodies.size, newBodies)
+                needsReset = false
+                camAngle = 0.0f
+                camPitch = 0.2617994f
+                zoom = 1.0f
+            }
 
             val now = glfwGetTime()
             val dtFrame = (now - lastTime).toFloat()
@@ -714,14 +746,15 @@ fun main() {
             glClearColor(bg, bg, bg, 1f)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            sim.render(Config.WIDTH, Config.HEIGHT, camAngle, center)
+            sim.render(Config.WIDTH, Config.HEIGHT, camAngle, camPitch, zoom, center)
 
             glfwSwapBuffers(window)
 
             frames++
             accTime += (glfwGetTime() - now)
             if (accTime >= 1.0) {
-                glfwSetWindowTitle(window, "GPU N-Body (SSBO render)  |  ${frames} FPS  |  N=$N")
+                val status = if (paused) "PAUSED" else "RUNNING"
+                glfwSetWindowTitle(window, "GPU N-Body | $status | ${frames} FPS | N=$N | [SPACE:pause R:reset Arrows:rotate +/-:zoom]")
                 frames = 0
                 accTime = 0.0
             }
